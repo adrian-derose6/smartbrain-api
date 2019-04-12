@@ -1,12 +1,28 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const knex = require('knex');
+
+const database = knex({
+    client: 'pg',
+    connection: {
+      host : '127.0.0.1',
+      user : 'postgres',
+      password : 'tecate6698',
+      database : 'smartbrain'
+    }
+});
+
+database.select('*').from('users').then(data => {
+    console.log(data);
+});
 
 const app = express();
+
 app.use(bodyParser.json());
 app.use(cors());
 
-const database = {
+const db = {
     users: [
         {
             id:'123',
@@ -32,8 +48,8 @@ app.get('/', (req, res) => {
 })
 
 app.post('/signin', (req, res) => {
-    if (req.body.email === database.users[0].email && req.body.password === database.users[0].password) {
-        res.json('success');
+    if (req.body.email === db.users[0].email && req.body.password === database.users[0].password) {
+        res.json(db.users[0]);
     }
     else {
         res.status(400).json('error logging in');
@@ -42,22 +58,23 @@ app.post('/signin', (req, res) => {
 
 app.post('/register', (req, res) => {
     const { email, name, password } = req.body;
-    database.users.push({
-        id:'125',
-        name: name,
-        email: email,
-        password: password,
-        entries: 0,
-        joined: new Date()       
-    });
-
-    res.json(database.users[database.users.length - 1])
+    database('users')
+        .returning('*')
+        .insert({ 
+            email: email,
+            name: name,
+            joined: new Date()
+        })
+        .then(user => {
+            res.json(user[0]);
+        })
+        .catch(err => res.status(400).json(err))
 })
 
 app.get('/profile/:id', (req, res) => {
     const { id } = req.params;
     let found = false;
-    database.users.forEach(user => {
+    db.users.forEach(user => {
         if (user.id === id) {
             found = true;
             return res.json(user);
@@ -71,7 +88,7 @@ app.get('/profile/:id', (req, res) => {
 app.put('/image', (req, res) => {
     const { id } = req.body;
     let found = false;
-    database.users.forEach(user => {
+    db.users.forEach(user => {
         if (user.id === id) {
             found = true;
             user.entries++
