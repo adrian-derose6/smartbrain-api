@@ -14,10 +14,8 @@ const PORT = process.env.PORT;
 const database = knex({
     client: 'pg',
     connection: {
-      host : 'postgresql-perpendicular-85860',
-      user : 'postgres',
-      password : 'tecate6698',
-      database : 'smartbrain'
+        connectionString : process.env.DATABASE_URL,
+        ssl: true
     }
 });
 
